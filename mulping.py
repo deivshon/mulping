@@ -40,12 +40,13 @@ def parsePing(pingOutput):
 
     return rtts[0], rtts[1], rtts[2]
 
-def ping(addr, count):
+def ping(addr, count, timeout = 0):
     try:
-        pingProcess = subprocess.run(["ping", addr, "-nqc", str(count)], capture_output = True)
+        # e.g.: ping 0.0.0.0 -nqc1 -W0
+        pingProcess = subprocess.run(["ping", addr, "-nqc", str(count), "-W", str(timeout)], capture_output = True)
     except:
         failure("The `ping` program could not be called")
-    
+
     if pingProcess.returncode != 0:
         return None, None, None
 
@@ -61,6 +62,7 @@ relayConditions = [notBridge]
 parser.add_argument("-c", "--country", action = "store", help = "Filter by country", nargs = "+", required = False)
 parser.add_argument("-w", "--wireguard", action = "store_true", help = "Only select WireGuard servers")
 parser.add_argument("-o", "--openvpn", action = "store_true", help = "Only select OpenVPN servers")
+parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to wait for each` ping response")
 
 args = parser.parse_args()
 
@@ -73,6 +75,8 @@ if args.country != None:
 if args.openvpn: relayConditions.append(isType("openvpn"))
 if args.wireguard: relayConditions.append(isType("wireguard"))
 
+timeout = 0 if args.timeout == None else float(args.timeout)
+
 relays = getRelays()
 
 relayCount = 0
@@ -84,7 +88,7 @@ for r in relays:
             skip = True
             break
     if skip: continue
-    
+
     relayCount += 1
 
     host = r["hostname"]
@@ -94,7 +98,7 @@ for r in relays:
         print(f"{host:15} -> inactive")
         continue
 
-    _, rtt, _ = ping(address, 1)
+    _, rtt, _ = ping(address, 1, timeout = timeout)
     if rtt == None:
         perror(f"{host:15} -> error")
         continue
@@ -105,6 +109,9 @@ for r in relays:
 
 if relayCount == 0:
     failure("The conditions specified resulted in no relays")
+
+if latencies == []:
+    failure("No relay could be reached")
 
 lowestLatency = min(latencies, key = lambda e: e[1])
 maxLatency = max(latencies, key = lambda e: e[1])
