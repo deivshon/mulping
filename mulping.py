@@ -3,13 +3,17 @@ import sys
 import argparse
 import subprocess
 
-notBridge = lambda r: "type" in r and r["type"] != "bridge"
+# Returns a function that tests if a relay 'r' is of type 't'
+isType = lambda t: (lambda r: "type" in r and r["type"] == t)
 
 # Returns a function that tests if a relay 'r' has country code 'c'
 inCountry = lambda c: (lambda r: "country_code" in r and r["country_code"] == c)
 
 # Returns a function that given a relay 'r', tests if it fits at least one of the conditions in 'filters'
 filterOr = lambda filters: (lambda r: [f(r) for f in filters].count(True) > 0)
+
+# Tests if a relay is not a bridge
+notBridge = lambda r: not isType("bridge")(r)
 
 def perror(err):
     print(err, file = sys.stderr)
@@ -55,6 +59,8 @@ parser = argparse.ArgumentParser(
 relayConditions = [notBridge]
 
 parser.add_argument("-c", "--country", action = "store", help = "Filter by country", nargs = "+", required = False)
+parser.add_argument("-w", "--wireguard", action = "store_true", help = "Only select WireGuard servers")
+parser.add_argument("-o", "--openvpn", action = "store_true", help = "Only select OpenVPN servers")
 
 args = parser.parse_args()
 
@@ -63,6 +69,9 @@ if args.country != None:
 
 	countryFilter = filterOr(countryConditions)	
 	relayConditions.append(countryFilter)
+
+if args.openvpn: relayConditions.append(isType("openvpn"))
+if args.wireguard: relayConditions.append(isType("wireguard"))
 
 relays = getRelays()
 
