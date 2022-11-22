@@ -5,16 +5,19 @@ import sys
 import argparse
 import subprocess
 
-# Returns a function that tests if a relay 'r' is of type 't'
-isType = lambda t: (lambda r: "type" in r and r["type"] == t)
+# Returns a function that tests if attribute 't' has value 'v' in relay 'r'
+eqAttribute = lambda a, v: (lambda r: a in r and r[a] == v)
 
-# Returns a function that tests if a relay 'r' has country code 'c'
-inCountry = lambda c: (lambda r: "country_code" in r and r["country_code"] == c)
+# Returns a function that tests if a relay is of type 't'
+isType = lambda t: eqAttribute("type", t)
+
+# Returns a function that tests if a relay has country code 'c'
+inCountry = lambda c: eqAttribute("country_code", c)
 
 # Returns a function that given a relay 'r', tests if it fits at least one of the conditions in 'filters'
 filterOr = lambda filters: (lambda r: [f(r) for f in filters].count(True) > 0)
 
-# Tests if a relay is not a bridge
+# Tests if a relay 'r' is not a bridge
 notBridge = lambda r: not isType("bridge")(r)
 
 def perror(err):
