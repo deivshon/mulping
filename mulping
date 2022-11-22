@@ -1,11 +1,17 @@
 #!/bin/env python3
 
-import requests
+import os
 import sys
+import json
 import argparse
 import subprocess
 
+from time import time
+
 RELAYS_LINK = "https://api.mullvad.net/www/relays/all/"
+RELAYS_FILE = "/tmp/mulpingData"
+
+TIMESTAMP_INDEX = 0
 
 HOSTNAME = "hostname"
 TYPE = "type"
@@ -16,6 +22,12 @@ IPV4 = "ipv4_addr_in"
 WIREGUARD = "wireguard"
 OPENVPN = "openvpn"
 BRIDGE = "bridge"
+
+
+#############################
+# Relay filtering utilities #
+#############################
+
 
 # Returns a function that tests if attribute 't' has value 'v' in relay 'r'
 eqAttribute = lambda a, v: (lambda r: a in r and r[a] == v)
@@ -38,6 +50,12 @@ filterOr = lambda filters: (lambda r: [f(r) for f in filters].count(True) > 0)
 # Returns a function that given a relay 'r', tests if it fits all of the conditions in 'filters'
 filterAnd = lambda filters: (lambda r: [f(r) for f in filters].count(False) == 0)
 
+
+##################
+# Error handling #
+##################
+
+
 def perror(err):
     print(err, file = sys.stderr)
 
@@ -45,13 +63,65 @@ def failure(err):
     perror(err)
     sys.exit(1)
 
-def getRelays():
+
+#########################
+# Relays data retrieval #
+#########################
+
+
+def fetchRelays():
+    print("Fetching relays... ", end = "")
+    sys.stdout.flush()
+
+    # Only import the "requests" module here as it takes
+    # significantly longer than the others
+    import requests
+
     try:
         relays = requests.get(f"{RELAYS_LINK}").json()
     except:
         failure("Could not get relays")
 
+    relays.insert(TIMESTAMP_INDEX, time())
+    with open(RELAYS_FILE, "w") as f:
+        json.dump(relays, f)
+    del relays[TIMESTAMP_INDEX]
+
+    print("done!\n")
     return relays
+
+def loadRelays():
+    with open(RELAYS_FILE, "r") as f:
+        relays = json.loads(f.read())
+
+    if not isinstance(relays[TIMESTAMP_INDEX], (float, int)):
+        raise Exception
+
+    # If the data is more than 12 hours old, fetch it again
+    if time() - relays[TIMESTAMP_INDEX] >= 43200:
+        raise Exception
+
+    # Delete timestamp from final relay list
+    del relays[TIMESTAMP_INDEX]
+
+    return relays
+
+def getRelays():
+    if os.path.isfile(RELAYS_FILE):
+        try:
+            relays = loadRelays()
+        except:
+            relays = fetchRelays()
+    else:
+        relays = fetchRelays()
+
+    return relays
+
+
+##################
+# Ping utilities #
+##################
+
 
 def parsePing(pingOutput):
     resultsLine = pingOutput.splitlines()[pingOutput.count("\n") - 1]
@@ -74,6 +144,12 @@ def ping(addr, count, timeout = 0):
         return None, None, None
 
     return parsePing(pingProcess.stdout.decode())
+
+
+########
+# Main #
+########
+
 
 parser = argparse.ArgumentParser(
     prog = "mulping",
