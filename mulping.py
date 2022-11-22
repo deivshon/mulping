@@ -5,6 +5,12 @@ import subprocess
 
 notBridge = lambda r: "type" in r and r["type"] != "bridge"
 
+# Returns a function that tests if a relay 'r' has country code 'c'
+inCountry = lambda c: (lambda r: "country_code" in r and r["country_code"] == c)
+
+# Returns a function that given a relay 'r', tests if it fits at least one of the conditions in 'filters'
+filterOr = lambda filters: (lambda r: [f(r) for f in filters].count(True) > 0)
+
 def perror(err):
     print(err, file = sys.stderr)
 
@@ -41,9 +47,24 @@ def ping(addr, count):
 
     return parsePing(pingProcess.stdout.decode())
 
-relays = getRelays()
+parser = argparse.ArgumentParser(
+    prog = "mulping",
+    description = "Batch pings utility for Mullvad VPN (not affiliated)",
+)
 
 relayConditions = [notBridge]
+
+parser.add_argument("-c", "--country", action = "store", help = "Filter by country", nargs = "+", required = False)
+
+args = parser.parse_args()
+
+if args.country != None:
+	countryConditions = list(map(inCountry, args.country))
+
+	countryFilter = filterOr(countryConditions)	
+	relayConditions.append(countryFilter)
+
+relays = getRelays()
 
 relayCount = 0
 latencies = []
