@@ -5,17 +5,29 @@ import sys
 import argparse
 import subprocess
 
+RELAYS_LINK = "https://api.mullvad.net/www/relays/all/"
+
+HOSTNAME = "hostname"
+TYPE = "type"
+ACTIVE = "active"
+COUNTRY_CODE = "country_code"
+IPV4 = "ipv4_addr_in"
+
+WIREGUARD = "wireguard"
+OPENVPN = "openvpn"
+BRIDGE = "bridge"
+
 # Returns a function that tests if attribute 't' has value 'v' in relay 'r'
 eqAttribute = lambda a, v: (lambda r: a in r and r[a] == v)
 
 # Returns a function that tests if a relay is of type 't'
-isType = lambda t: eqAttribute("type", t)
+isType = lambda t: eqAttribute(TYPE, t)
 
 # Returns a function that tests if a relay has country code 'c'
-inCountry = lambda c: eqAttribute("country_code", c)
+inCountry = lambda c: eqAttribute(COUNTRY_CODE, c)
 
 # Tests if a relay 'r' is not a bridge
-notBridge = lambda r: not isType("bridge")(r)
+notBridge = lambda r: not isType(BRIDGE)(r)
 
 # Returns a function that given a relay 'r', tests if it fits at least one of the conditions in 'filters'
 filterOr = lambda filters: (lambda r: [f(r) for f in filters].count(True) > 0)
@@ -32,7 +44,7 @@ def failure(err):
 
 def getRelays():
     try:
-        relays = requests.get("https://api.mullvad.net/www/relays/all/").json()
+        relays = requests.get(f"{RELAYS_LINK}").json()
     except:
         failure("Could not get relays")
 
@@ -80,8 +92,8 @@ if args.country != None:
 	countryFilter = filterOr(countryConditions)	
 	relayConditions.append(countryFilter)
 
-if args.openvpn: relayConditions.append(isType("openvpn"))
-if args.wireguard: relayConditions.append(isType("wireguard"))
+if args.wireguard: relayConditions.append(isType(WIREGUARD))
+if args.openvpn: relayConditions.append(isType(OPENVPN))
 
 timeout = 0 if args.timeout == None else float(args.timeout)
 
@@ -92,10 +104,10 @@ if relays == []:
 
 latencies = []
 for r in relays:
-    host = r["hostname"]
-    address = r["ipv4_addr_in"]
+    host = r[HOSTNAME]
+    address = r[IPV4]
 
-    if not r["active"]:
+    if not r[ACTIVE]:
         print(f"{host:15} -> inactive")
         continue
 
