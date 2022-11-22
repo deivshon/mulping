@@ -14,11 +14,14 @@ isType = lambda t: eqAttribute("type", t)
 # Returns a function that tests if a relay has country code 'c'
 inCountry = lambda c: eqAttribute("country_code", c)
 
+# Tests if a relay 'r' is not a bridge
+notBridge = lambda r: not isType("bridge")(r)
+
 # Returns a function that given a relay 'r', tests if it fits at least one of the conditions in 'filters'
 filterOr = lambda filters: (lambda r: [f(r) for f in filters].count(True) > 0)
 
-# Tests if a relay 'r' is not a bridge
-notBridge = lambda r: not isType("bridge")(r)
+# Returns a function that given a relay 'r', tests if it fits all of the conditions in 'filters'
+filterAnd = lambda filters: (lambda r: [f(r) for f in filters].count(False) == 0)
 
 def perror(err):
     print(err, file = sys.stderr)
@@ -82,20 +85,13 @@ if args.wireguard: relayConditions.append(isType("wireguard"))
 
 timeout = 0 if args.timeout == None else float(args.timeout)
 
-relays = getRelays()
+relays = filter(filterAnd(relayConditions), getRelays())
 
-relayCount = 0
+if relays == []:
+    failure("The conditions specified resulted in no relays")
+
 latencies = []
 for r in relays:
-    skip = False
-    for condition in relayConditions:
-        if not condition(r):
-            skip = True
-            break
-    if skip: continue
-
-    relayCount += 1
-
     host = r["hostname"]
     address = r["ipv4_addr_in"]
 
@@ -111,9 +107,6 @@ for r in relays:
     print(f"{host:15} -> {rtt:.3f}ms")
 
     latencies.append((host, rtt))
-
-if relayCount == 0:
-    failure("The conditions specified resulted in no relays")
 
 if latencies == []:
     failure("No relay could be reached")
