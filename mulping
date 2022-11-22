@@ -20,6 +20,7 @@ BRIDGE = "bridge"
 # Returns a function that tests if attribute 't' has value 'v' in relay 'r'
 eqAttribute = lambda a, v: (lambda r: a in r and r[a] == v)
 
+# Returns a function that tests if a relay is of type 't'
 isType = lambda t: eqAttribute(TYPE, t)
 
 # Returns a function that tests if a relay has country code 'c'
