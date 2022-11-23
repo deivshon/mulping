@@ -20,6 +20,7 @@ COUNTRY_CODE = "country_code"
 CITY_CODE = "city_code"
 IPV4 = "ipv4_addr_in"
 IPV6 = "ipv6_addr_in"
+BANDWIDTH = "network_port_speed"
 OWNED = "owned"
 STBOOT = "stboot"
 
@@ -37,8 +38,9 @@ BRIDGE = "bridge"
 # if attribute 'a' in relay 'r' has value 'v'
 eqAttr = lambda a: (lambda v: (lambda r: a in r and r[a] == v))
 
-# Symmetric negation
+# Analogous
 neqAttr = lambda a: (lambda v: (lambda r: a in r and r[a] != v))
+geqAttr = lambda a: (lambda v: (lambda r: a in r and r[a] >= v))
 
 # Returns a function that given a relay 'r', tests if it fits at least one of the conditions in 'filters'
 filterOr = lambda filters: (lambda r: [f(r) for f in filters].count(True) > 0)
@@ -166,6 +168,7 @@ parser.add_argument("-w", "--wireguard", action = "store_true", help = "Only sel
 parser.add_argument("-o", "--openvpn", action = "store_true", help = "Only select OpenVPN servers")
 parser.add_argument("-s", "--stboot", action = "store_true", help = "Only select stboot servers")
 parser.add_argument("-O", "--owned", action = "store_true", help = "Only select servers owned by Mullvad")
+parser.add_argument("-b", "--bandwidth", action = "store", help = "Only select servers that have at least this bandwidth speed (Gbps)")
 parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to wait for each` ping response")
 parser.add_argument("-6", "--ipv6", action = "store_true", help = "Use IPv6 to ping servers (requires IPv6 connectivity on both ends)")
 
@@ -189,6 +192,12 @@ if args.city != None:
 
     cityFilter = filterOr(cityConditions)
     relayConditions.append(cityFilter)
+
+if args.bandwidth:
+  try:
+    relayConditions.append(geqAttr(BANDWIDTH)(float(args.bandwidth)))
+  except:
+    failure("Error: the bandwidth option must be a number")
 
 if args.wireguard: relayConditions.append(eqAttr(TYPE)(WIREGUARD))
 if args.openvpn: relayConditions.append(eqAttr(TYPE)(OPENVPN))
