@@ -20,6 +20,7 @@ COUNTRY_CODE = "country_code"
 CITY_CODE = "city_code"
 IPV4 = "ipv4_addr_in"
 IPV6 = "ipv6_addr_in"
+PROVIDER = "provider"
 BANDWIDTH = "network_port_speed"
 OWNED = "owned"
 STBOOT = "stboot"
@@ -166,6 +167,8 @@ parser.add_argument("-c", "--country", action = "store", help = "Only select ser
 parser.add_argument("-cn", "--country-not", action = "store", help = "Exclude servers located in the countries specified", nargs = "+", metavar = "country_code")
 parser.add_argument("-C", "--city", action = "store", help = "Only select servers located in the cities specified", nargs = "+", metavar = "city_code")
 parser.add_argument("-Cn", "--city-not", action = "store", help = "Exclude servers located in the cities specified", nargs = "+", metavar = "city_code")
+parser.add_argument("-p", "--provider", action = "store", help = "Only select servers using the specified providers", nargs = "+", metavar = "provider")
+parser.add_argument("-pn", "--provider-not", action = "store", help = "Exclude servers using the specified providers", nargs = "+", metavar = "provider")
 parser.add_argument("-w", "--wireguard", action = "store_true", help = "Only select WireGuard servers")
 parser.add_argument("-o", "--openvpn", action = "store_true", help = "Only select OpenVPN servers")
 parser.add_argument("-s", "--stboot", action = "store_true", help = "Only select stboot servers")
@@ -211,6 +214,18 @@ if args.city_not != None:
 
     notCityFilter = filterAnd(notCityConditions)
     relayConditions.append(notCityFilter)
+
+if args.provider != None:
+	providerConditions = list(map(eqAttr(PROVIDER), args.provider))
+
+	providerFilter = filterOr(providerConditions)	
+	relayConditions.append(providerFilter)
+
+if args.provider_not != None:
+	notProviderConditions = list(map(neqAttr(PROVIDER), args.provider_not))
+
+	notProviderFilter = filterAnd(notProviderConditions)	
+	relayConditions.append(notProviderFilter)
 
 if args.bandwidth:
   try:
