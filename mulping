@@ -162,16 +162,16 @@ relayConditions = [
     eqAttr(ACTIVE)(True)
 ]
 
-parser.add_argument("-c", "--country", action = "store", help = "Filter by country", nargs = "+", required = False)
-parser.add_argument("-cn", "--country-not", action = "store", help = "Filter by country", nargs = "+", required = False)
-parser.add_argument("-C", "--city", action = "store", help = "Filter by country", nargs = "+", required = False)
-parser.add_argument("-Cn", "--city-not", action = "store", help = "Filter by country", nargs = "+", required = False)
+parser.add_argument("-c", "--country", action = "store", help = "Only select servers located in the countries specified", nargs = "+", metavar = "country_code")
+parser.add_argument("-cn", "--country-not", action = "store", help = "Exclude servers located in the countries specified", nargs = "+", metavar = "country_code")
+parser.add_argument("-C", "--city", action = "store", help = "Only select servers located in the cities specified", nargs = "+", metavar = "city_code")
+parser.add_argument("-Cn", "--city-not", action = "store", help = "Exclude servers located in the cities specified", nargs = "+", metavar = "city_code")
 parser.add_argument("-w", "--wireguard", action = "store_true", help = "Only select WireGuard servers")
 parser.add_argument("-o", "--openvpn", action = "store_true", help = "Only select OpenVPN servers")
 parser.add_argument("-s", "--stboot", action = "store_true", help = "Only select stboot servers")
 parser.add_argument("-O", "--owned", action = "store_true", help = "Only select servers owned by Mullvad")
-parser.add_argument("-b", "--bandwidth", action = "store", help = "Only select servers that have at least this bandwidth speed (Gbps)")
-parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to wait for each` ping response")
+parser.add_argument("-b", "--bandwidth", action = "store", help = "Only select servers that have at least this bandwidth speed (Gbps)", metavar = "bandwidth")
+parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to wait for each ping response", metavar = "timeout")
 parser.add_argument("-6", "--ipv6", action = "store_true", help = "Use IPv6 to ping servers (requires IPv6 connectivity on both ends)")
 
 args = parser.parse_args()
