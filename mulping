@@ -18,6 +18,7 @@ TYPE = "type"
 ACTIVE = "active"
 COUNTRY_CODE = "country_code"
 IPV4 = "ipv4_addr_in"
+STBOOT = "stboot"
 
 WIREGUARD = "wireguard"
 OPENVPN = "openvpn"
@@ -37,6 +38,9 @@ isType = lambda t: eqAttribute(TYPE, t)
 
 # Returns a function that tests if a relay has country code 'c'
 inCountry = lambda c: eqAttribute(COUNTRY_CODE, c)
+
+#Tests if a relay has stboot
+hasStboot = eqAttribute(STBOOT, True)
 
 # Tests if a relay is active
 isActive = eqAttribute(ACTIVE, True)
@@ -161,6 +165,7 @@ relayConditions = [notBridge, isActive]
 parser.add_argument("-c", "--country", action = "store", help = "Filter by country", nargs = "+", required = False)
 parser.add_argument("-w", "--wireguard", action = "store_true", help = "Only select WireGuard servers")
 parser.add_argument("-o", "--openvpn", action = "store_true", help = "Only select OpenVPN servers")
+parser.add_argument("-s", "--stboot", action = "store_true", help = "Only select stboot servers")
 parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to wait for each` ping response")
 
 args = parser.parse_args()
@@ -173,6 +178,7 @@ if args.country != None:
 
 if args.wireguard: relayConditions.append(isType(WIREGUARD))
 if args.openvpn: relayConditions.append(isType(OPENVPN))
+if args.stboot: relayConditions.append(hasStboot)
 
 timeout = 0 if args.timeout == None else float(args.timeout)
 
