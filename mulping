@@ -18,6 +18,7 @@ TYPE = "type"
 ACTIVE = "active"
 COUNTRY_CODE = "country_code"
 IPV4 = "ipv4_addr_in"
+IPV6 = "ipv6_addr_in"
 OWNED = "owned"
 STBOOT = "stboot"
 
@@ -127,10 +128,13 @@ def parsePing(pingOutput):
 
     return rtts[0], rtts[1], rtts[2]
 
-def ping(addr, count, timeout = 0):
+def ping(addr, count, timeout = 0, ipv6 = False):
     try:
         # e.g.: ping 0.0.0.0 -nqc1 -W0
-        pingProcess = subprocess.run(["ping", addr, "-nqc", str(count), "-W", str(timeout)], capture_output = True)
+        pingCommand = ["ping", addr, "-nqc", str(count), "-W", str(timeout)]
+        if ipv6: pingCommand.append("-6")
+
+        pingProcess = subprocess.run(pingCommand, capture_output = True)
     except:
         failure("The `ping` program could not be called")
 
@@ -161,6 +165,7 @@ parser.add_argument("-o", "--openvpn", action = "store_true", help = "Only selec
 parser.add_argument("-s", "--stboot", action = "store_true", help = "Only select stboot servers")
 parser.add_argument("-O", "--owned", action = "store_true", help = "Only select servers owned by Mullvad")
 parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to wait for each` ping response")
+parser.add_argument("-6", "--ipv6", action = "store_true", help = "Use IPv6 to ping servers (requires IPv6 connectivity on both ends)")
 
 args = parser.parse_args()
 
@@ -186,6 +191,12 @@ latencies = []
 for r in relays:
     host = r[HOSTNAME]
     address = r[IPV4]
+
+    if args.ipv6:
+        if IPV6 in r: address = r[IPV6]
+        else:
+            perror(f"{host:15} -> no IPv6")
+            continue
 
     _, rtt, _ = ping(address, 1, timeout = timeout)
     if rtt == None:
