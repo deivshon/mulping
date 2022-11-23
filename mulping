@@ -165,6 +165,7 @@ relayConditions = [
 parser.add_argument("-c", "--country", action = "store", help = "Filter by country", nargs = "+", required = False)
 parser.add_argument("-cn", "--country-not", action = "store", help = "Filter by country", nargs = "+", required = False)
 parser.add_argument("-C", "--city", action = "store", help = "Filter by country", nargs = "+", required = False)
+parser.add_argument("-Cn", "--city-not", action = "store", help = "Filter by country", nargs = "+", required = False)
 parser.add_argument("-w", "--wireguard", action = "store_true", help = "Only select WireGuard servers")
 parser.add_argument("-o", "--openvpn", action = "store_true", help = "Only select OpenVPN servers")
 parser.add_argument("-s", "--stboot", action = "store_true", help = "Only select stboot servers")
@@ -199,6 +200,17 @@ if args.city != None:
 
     cityFilter = filterOr(cityConditions)
     relayConditions.append(cityFilter)
+
+if args.city_not != None:
+    notCities = list(zip(args.city_not[::2], args.city_not[1::2]))
+
+    # Symmetrical to inCity
+    notInCity = lambda cityTuple: (lambda r: not (eqAttr(COUNTRY_CODE)(cityTuple[0])(r) and eqAttr(CITY_CODE)(cityTuple[1])(r)))
+
+    notCityConditions = list(map(notInCity, notCities))
+
+    notCityFilter = filterAnd(notCityConditions)
+    relayConditions.append(notCityFilter)
 
 if args.bandwidth:
   try:
