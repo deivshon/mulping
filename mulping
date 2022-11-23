@@ -163,6 +163,7 @@ relayConditions = [
 ]
 
 parser.add_argument("-c", "--country", action = "store", help = "Filter by country", nargs = "+", required = False)
+parser.add_argument("-cn", "--country-not", action = "store", help = "Filter by country", nargs = "+", required = False)
 parser.add_argument("-C", "--city", action = "store", help = "Filter by country", nargs = "+", required = False)
 parser.add_argument("-w", "--wireguard", action = "store_true", help = "Only select WireGuard servers")
 parser.add_argument("-o", "--openvpn", action = "store_true", help = "Only select OpenVPN servers")
@@ -179,6 +180,12 @@ if args.country != None:
 
 	countryFilter = filterOr(countryConditions)	
 	relayConditions.append(countryFilter)
+
+if args.country_not != None:
+	notCountryConditions = list(map(neqAttr(COUNTRY_CODE), args.country_not))
+
+	notCountryFilter = filterAnd(notCountryConditions)	
+	relayConditions.append(notCountryFilter)
 
 if args.city != None:
     cities = list(zip(args.city[::2], args.city[1::2]))
