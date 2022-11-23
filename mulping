@@ -149,10 +149,10 @@ parser = argparse.ArgumentParser(
     description = "Batch pings utility for Mullvad VPN (not affiliated)",
 )
 
-notBridge = neqAttr(TYPE)(BRIDGE)
-isActive = eqAttr(ACTIVE)(True)
-
-relayConditions = [notBridge, isActive]
+relayConditions = [
+    neqAttr(TYPE)(BRIDGE),
+    eqAttr(ACTIVE)(True)
+]
 
 parser.add_argument("-c", "--country", action = "store", help = "Filter by country", nargs = "+", required = False)
 parser.add_argument("-w", "--wireguard", action = "store_true", help = "Only select WireGuard servers")
