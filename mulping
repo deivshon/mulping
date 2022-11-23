@@ -176,7 +176,7 @@ if args.openvpn: relayConditions.append(isType(OPENVPN))
 
 timeout = 0 if args.timeout == None else float(args.timeout)
 
-relays = filter(filterAnd(relayConditions), getRelays())
+relays = list(filter(filterAnd(relayConditions), getRelays()))
 
 if relays == []:
     failure("The conditions specified resulted in no relays")
