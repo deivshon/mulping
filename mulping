@@ -39,7 +39,7 @@ isType = lambda t: eqAttribute(TYPE, t)
 # Returns a function that tests if a relay has country code 'c'
 inCountry = lambda c: eqAttribute(COUNTRY_CODE, c)
 
-#Tests if a relay has stboot
+# Tests if a relay has stboot
 hasStboot = eqAttribute(STBOOT, True)
 
 # Tests if a relay is active
