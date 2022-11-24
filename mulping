@@ -148,6 +148,21 @@ def ping(addr, count, timeout = 0, ipv6 = False):
     return parsePing(pingProcess.stdout.decode())
 
 
+#####################
+# Mullvad utilities #
+#####################
+
+
+def mullvadChangeRelay(hostname):
+    try:
+        mullvadProcess = subprocess.run(["mullvad", "relay", "set", "hostname", hostname])
+
+        if mullvadProcess.returncode != 0:
+            raise Exception
+    except:
+        failure(f"An error occurred while trying to change the Mullvad relay options to hostname {hostname}")
+
+
 ########
 # Main #
 ########
@@ -176,6 +191,7 @@ parser.add_argument("-O", "--owned", action = "store_true", help = "Only select 
 parser.add_argument("-b", "--bandwidth", action = "store", help = "Only select servers that have at least this bandwidth speed (Gbps)", metavar = "bandwidth")
 parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to wait for each ping response", metavar = "timeout")
 parser.add_argument("-6", "--ipv6", action = "store_true", help = "Use IPv6 to ping servers (requires IPv6 connectivity on both ends)")
+parser.add_argument("-u", "--use", action = "store_true", help = "Change Mullvad relay options to use the lowest latency server tested")
 
 args = parser.parse_args()
 
@@ -273,3 +289,7 @@ maxLatency = max(latencies, key = lambda e: e[1])
 
 print(f"\nHighest latency host: {maxLatency[0]} ({maxLatency[1]}ms)")
 print(f"Lowest latency host: {lowestLatency[0]} ({lowestLatency[1]}ms)")
+
+if args.use:
+    print()
+    mullvadChangeRelay(lowestLatency[0])
