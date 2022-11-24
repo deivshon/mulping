@@ -254,7 +254,7 @@ if args.openvpn: relayConditions.append(eqAttr(TYPE)(OPENVPN))
 if args.stboot: relayConditions.append(eqAttr(STBOOT)(True))
 if args.owned: relayConditions.append(eqAttr(OWNED)(True))
 
-timeout = 0 if args.timeout == None else float(args.timeout) / 1000
+timeout = 10 if args.timeout == None else float(args.timeout) / 1000
 
 relays = list(filter(filterAnd(relayConditions), getRelays()))
 
@@ -272,7 +272,7 @@ for r in relays:
             perror(f"{host:15} -> no IPv6")
             continue
 
-    _, rtt, _ = ping(address, 1, timeout = timeout)
+    _, rtt, _ = ping(address, 1, timeout = timeout, ipv6 = args.ipv6)
     if rtt == None:
         perror(f"{host:15} -> error")
         continue
@@ -282,7 +282,7 @@ for r in relays:
     latencies.append((host, rtt))
 
 if latencies == []:
-    failure("No relay could be reached")
+    failure("\nNo relay could be reached")
 
 lowestLatency = min(latencies, key = lambda e: e[1])
 maxLatency = max(latencies, key = lambda e: e[1])
