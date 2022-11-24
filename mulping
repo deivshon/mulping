@@ -163,6 +163,38 @@ def mullvadChangeRelay(hostname):
         failure(f"An error occurred while trying to change the Mullvad relay options to hostname {hostname}")
 
 
+######################
+# Printing utilities #
+######################
+
+SPACES_HOSTNAME = 15
+SPACES_PING = 10
+
+ITEMS_SPACES = [
+    SPACES_HOSTNAME,
+    SPACES_PING
+]
+
+formatRtt = lambda rtt: f"{rtt:.3f}ms"
+
+def printBox(items, start, end, middle, regular):
+    if items == []: return ""
+
+    box = start
+    for i in items:
+        box += regular * (i + 2) + middle
+
+    box = box[0:len(box) - 1] + end
+    
+    print(box)
+
+def printResult(relay, rtt, wall):
+    host = relay[HOSTNAME]
+    rttFormatted = formatRtt(rtt) if isinstance(rtt, float) else "error"
+
+    print(f"{wall} {host:{SPACES_HOSTNAME}} {wall} {rttFormatted:{SPACES_PING}} {wall}")
+
+
 ########
 # Main #
 ########
@@ -262,6 +294,7 @@ if relays == []:
     failure("The conditions specified resulted in no relays")
 
 latencies = []
+printBox(ITEMS_SPACES, "┌", "┐", "┬", "─")
 for r in relays:
     host = r[HOSTNAME]
     address = r[IPV4]
@@ -269,17 +302,15 @@ for r in relays:
     if args.ipv6:
         if IPV6 in r: address = r[IPV6]
         else:
-            perror(f"{host:15} -> no IPv6")
+            printResult(r, None, "│")
             continue
 
     _, rtt, _ = ping(address, 1, timeout = timeout, ipv6 = args.ipv6)
-    if rtt == None:
-        perror(f"{host:15} -> error")
-        continue
 
-    print(f"{host:15} -> {rtt:.3f}ms")
+    printResult(r, rtt, "│")
 
-    latencies.append((host, rtt))
+    if rtt != None: latencies.append((host, rtt))
+printBox(ITEMS_SPACES, "└", "┘", "┴", "─")
 
 if latencies == []:
     failure("\nNo relay could be reached")
