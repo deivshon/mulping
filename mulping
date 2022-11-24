@@ -24,6 +24,7 @@ PROVIDER = "provider"
 BANDWIDTH = "network_port_speed"
 OWNED = "owned"
 STBOOT = "stboot"
+RTT = "round_trip_time"
 
 WIREGUARD = "wireguard"
 OPENVPN = "openvpn"
@@ -172,24 +173,24 @@ SPACES_IPV4 = 16
 SPACES_COUNTRY_CODE = 2
 SPACES_CITY_CODE = 3
 SPACES_PROVIDER = 10
-SPACES_PING = 10
+SPACES_RTT = 10
 
 ITEMS_SHORT_SPACES = [
     SPACES_HOSTNAME,
-    SPACES_PING
+    SPACES_RTT
 ]
 
 ITEMS_LONG_SPACES = [
     SPACES_HOSTNAME,
+    SPACES_RTT,
     SPACES_COUNTRY_CODE,
     SPACES_CITY_CODE,
     SPACES_PROVIDER,
-    SPACES_IPV4,
-    SPACES_PING
+    SPACES_IPV4
 ]
 
-shortResults = [HOSTNAME]
-longResults = [HOSTNAME, COUNTRY_CODE, CITY_CODE, PROVIDER, IPV4]
+shortResults = [HOSTNAME, RTT]
+longResults = [HOSTNAME, RTT, COUNTRY_CODE, CITY_CODE, PROVIDER, IPV4]
 
 formatRtt = lambda rtt: f"{rtt:.3f}ms"
 
@@ -204,16 +205,15 @@ def printBox(items, start, end, middle, regular):
     
     print(box)
 
-def printResult(relay, rtt, attributes, spaces, wall):
-    if len(attributes) + 1 != len(spaces):
+def printResult(relay, attributes, spaces, wall):
+    if len(attributes) != len(spaces):
         failure("Malformed data received by printing function")
 
     print(f"{wall} ", end = "")
-    for attribute, spacing in zip(attributes, spaces[0:len(spaces) - 1]):
+    for attribute, spacing in zip(attributes, spaces):
         print(f"{relay[attribute]:{spacing}} {wall} ", end = "")
 
-    rttFormatted = formatRtt(rtt) if isinstance(rtt, float) else "error"
-    print(f"{rttFormatted:{spaces[len(spaces) - 1]}} {wall}")
+    print()
 
 
 ########
@@ -316,7 +316,7 @@ if relays == []:
 
 latencies = []
 printBox(ITEMS_SHORT_SPACES, "┌", "┐", "┬", "─")
-for r in relays:
+for index, r in enumerate(relays):
     host = r[HOSTNAME]
     address = r[IPV4]
 
@@ -327,8 +327,11 @@ for r in relays:
             continue
 
     _, rtt, _ = ping(address, 1, timeout = timeout, ipv6 = args.ipv6)
+    if rtt != None: rtt = formatRtt(rtt)
 
-    printResult(r, rtt, shortResults, ITEMS_SHORT_SPACES, "│")
+    relays[index][RTT] = rtt
+
+    printResult(r, shortResults, ITEMS_SHORT_SPACES, "│")
 
     if rtt != None: latencies.append((host, rtt))
 printBox(ITEMS_SHORT_SPACES, "└", "┘", "┴", "─")
