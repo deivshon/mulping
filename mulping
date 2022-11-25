@@ -176,12 +176,22 @@ ITEMS_SPACES = {
     RTT: 10
 }
 
+noFormat = lambda i: i
+
+ITEMS_FORMAT = {
+    HOSTNAME: noFormat,
+    IPV4: noFormat,
+    IPV6: noFormat,
+    COUNTRY_CODE: noFormat,
+    CITY_CODE: noFormat,
+    PROVIDER: noFormat,
+    RTT: lambda rtt: f"{rtt:.3f}ms"
+}
+
 getSpaces = lambda i: [ITEMS_SPACES[item] if item in ITEMS_SPACES else None for item in i]
 
 shortResults = [HOSTNAME, RTT]
 longResults = [HOSTNAME, RTT, COUNTRY_CODE, CITY_CODE, PROVIDER, IPV4]
-
-formatRtt = lambda rtt: f"{rtt:.3f}ms"
 
 def printBox(items, start, end, middle, regular):
     if items == []: return ""
@@ -195,15 +205,15 @@ def printBox(items, start, end, middle, regular):
     print(box)
 
 def printResult(relay, attributes, wall):
-    print(f"{wall} ", end = "")
+    print(f"{wall}", end = "")
     for attribute in attributes:
-        if not attribute in ITEMS_SPACES:
+        if not attribute in ITEMS_SPACES or attribute not in ITEMS_FORMAT:
             failure("Unknown attribute received by printing function")
 
         if relay[attribute] == None:
-            print(f"{'error':{ITEMS_SPACES[attribute]}} {wall} ", end = "")
+            print(f" {'error':{ITEMS_SPACES[attribute]}} {wall}", end = "")
         else:
-            print(f"{relay[attribute]:{ITEMS_SPACES[attribute]}} {wall} ", end = "")
+            print(f" {ITEMS_FORMAT[attribute](relay[attribute]):{ITEMS_SPACES[attribute]}} {wall}", end = "")
 
     print()
 
@@ -315,11 +325,9 @@ for index, r in enumerate(relays):
     address = r[IP]
 
     _, rtt, _ = ping(address, 1, timeout = timeout, ipv6 = args.ipv6)
-
-    relays[index][RTT] = formatRtt(rtt) if rtt != None else None
+    relays[index][RTT] = rtt
 
     printResult(r, shortResults, "│")
-    relays[index][RTT] = rtt
 
 printBox(getSpaces(shortResults), "└", "┘", "┴", "─")
 
