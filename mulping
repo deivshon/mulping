@@ -168,22 +168,6 @@ def mullvadChangeRelay(hostname):
 ######################
 
 
-ITEMS_SPACES = {
-    HOSTNAME: 15,
-    IPV4: 16,
-    IPV6: 32,
-    COUNTRY_CODE: 2,
-    CITY_CODE: 3,
-    PROVIDER: 12,
-    RTT: 10,
-    OWNED: 6,
-    BANDWIDTH: 7,
-    COUNTRY_NAME: 20,
-    CITY_NAME: 20,
-    STBOOT: 4,
-    TYPE: 9
-}
-
 noFormat = lambda i: i
 
 relayTypeFormat = {
@@ -208,7 +192,18 @@ ITEMS_FORMAT = {
     TYPE: lambda t: relayTypeFormat[t] if t in relayTypeFormat else "Unknown"
 }
 
-getSpaces = lambda i: [ITEMS_SPACES[item] if item in ITEMS_SPACES else None for item in i]
+def getSpacing(relays, items):
+    spaces = {}
+    singleItemSpace = lambda i: (lambda r: len(ITEMS_FORMAT[i](r[i])))
+
+    for item in items:
+        if item == RTT: continue
+        spaces[item] = singleItemSpace(item)(max(relays, key = singleItemSpace(item)))
+
+    spaces[RTT] = 10
+    return spaces
+
+getSpacingList = lambda i, spacing: [spacing[item] if item in spacing else None for item in i]
 
 shortResults = [HOSTNAME, RTT]
 longResults = [HOSTNAME, RTT, COUNTRY_CODE, CITY_CODE, PROVIDER, IPV4]
@@ -224,16 +219,16 @@ def printBox(items, start, end, middle, regular):
 
     print(box)
 
-def printResult(relay, attributes, wall):
+def printResult(relay, attributes, itemsSpaces, wall):
     print(f"{wall}", end = "")
     for attribute in attributes:
-        if not attribute in ITEMS_SPACES or attribute not in ITEMS_FORMAT:
+        if not attribute in itemsSpaces or attribute not in ITEMS_FORMAT:
             failure("Unknown attribute received by printing function")
 
         if relay[attribute] == None:
-            print(f" {'error':{ITEMS_SPACES[attribute]}} {wall}", end = "")
+            print(f" {'error':{itemsSpaces[attribute]}} {wall}", end = "")
         else:
-            print(f" {ITEMS_FORMAT[attribute](relay[attribute]):{ITEMS_SPACES[attribute]}} {wall}", end = "")
+            print(f" {ITEMS_FORMAT[attribute](relay[attribute]):{itemsSpaces[attribute]}} {wall}", end = "")
 
     print()
 
@@ -337,9 +332,11 @@ relays = list(filter(filterAnd(relayConditions), getRelays()))
 if relays == []:
     failure("The conditions specified resulted in no relays")
 
+itemsSpaces = getSpacing(relays, shortResults)
+
 IP = IPV6 if args.ipv6 else IPV4
 
-printBox(getSpaces(shortResults), "┌", "┐", "┬", "─")
+printBox(getSpacingList(shortResults, itemsSpaces), "┌", "┐", "┬", "─")
 for index, r in enumerate(relays):
     host = r[HOSTNAME]
     address = r[IP]
@@ -347,9 +344,9 @@ for index, r in enumerate(relays):
     _, rtt, _ = ping(address, 1, timeout = timeout, ipv6 = args.ipv6)
     relays[index][RTT] = rtt
 
-    printResult(r, shortResults, "│")
+    printResult(r, shortResults, itemsSpaces, "│")
 
-printBox(getSpaces(shortResults), "└", "┘", "┴", "─")
+printBox(getSpacingList(shortResults, itemsSpaces), "└", "┘", "┴", "─")
 
 # Filter out relays whose latency test resulted resulted in an error
 relays = list(filter(lambda r: r[RTT] != None, relays))
