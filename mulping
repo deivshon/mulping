@@ -133,9 +133,9 @@ def parsePing(pingOutput):
 
     return rtts[0], rtts[1], rtts[2]
 
-def ping(addr, count, timeout = 0, ipv6 = False):
+def ping(addr, count, timeout = 10, ipv6 = False):
     try:
-        # e.g.: ping 0.0.0.0 -nqc1 -W0
+        # e.g.: ping 0.0.0.0 -nqc1 -W10
         pingCommand = ["ping", addr, "-nqc", str(count), "-W", str(timeout)]
         if ipv6: pingCommand.append("-6")
 
