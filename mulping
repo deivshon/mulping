@@ -298,6 +298,7 @@ if args.wireguard: relayConditions.append(eqAttr(TYPE)(WIREGUARD))
 if args.openvpn: relayConditions.append(eqAttr(TYPE)(OPENVPN))
 if args.stboot: relayConditions.append(eqAttr(STBOOT)(True))
 if args.owned: relayConditions.append(eqAttr(OWNED)(True))
+if args.ipv6: relayConditions.append(lambda r: IPV6 in r)
 
 timeout = 10 if args.timeout == None else float(args.timeout) / 1000
 
@@ -306,16 +307,12 @@ relays = list(filter(filterAnd(relayConditions), getRelays()))
 if relays == []:
     failure("The conditions specified resulted in no relays")
 
+IP = IPV6 if args.ipv6 else IPV4
+
 printBox(getSpaces(shortResults), "┌", "┐", "┬", "─")
 for index, r in enumerate(relays):
     host = r[HOSTNAME]
-    address = r[IPV4]
-
-    if args.ipv6:
-        if IPV6 in r: address = r[IPV6]
-        else:
-            printResult(r, None, "│")
-            continue
+    address = r[IP]
 
     _, rtt, _ = ping(address, 1, timeout = timeout, ipv6 = args.ipv6)
 
