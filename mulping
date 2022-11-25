@@ -192,6 +192,35 @@ ITEMS_FORMAT = {
     TYPE: lambda t: relayTypeFormat[t] if t in relayTypeFormat else "Unknown"
 }
 
+ITEMS_IDS = {
+    "h": HOSTNAME,
+    "4": IPV4,
+    "6": IPV6,
+    "c": COUNTRY_CODE,
+    "C": CITY_CODE,
+    "p": PROVIDER,
+    "l": RTT,
+    "O": OWNED,
+    "b": BANDWIDTH,
+    "cf": COUNTRY_NAME,
+    "Cf": CITY_NAME,
+    "s": STBOOT,
+    "t": TYPE
+}
+
+attributesShort = [HOSTNAME, RTT]
+attributesLong = [HOSTNAME, RTT, COUNTRY_NAME, CITY_NAME, PROVIDER, OWNED, STBOOT]
+
+def getAttributes(formatList):
+    attributes = []
+    for id in formatList:
+        if id not in ITEMS_IDS:
+            failure(f"Unknown attribute identifier: {id}")
+
+        attributes.append(ITEMS_IDS[id])
+
+    return attributes
+
 def getSpacing(relays, items):
     spaces = {}
     singleItemSpace = lambda i: (lambda r: len(ITEMS_FORMAT[i](r[i])))
@@ -204,9 +233,6 @@ def getSpacing(relays, items):
     return spaces
 
 getSpacingList = lambda i, spacing: [spacing[item] if item in spacing else None for item in i]
-
-shortResults = [HOSTNAME, RTT]
-longResults = [HOSTNAME, RTT, COUNTRY_CODE, CITY_CODE, PROVIDER, IPV4]
 
 def printBox(items, start, end, middle, regular):
     if items == []: return ""
@@ -254,6 +280,8 @@ parser.add_argument("-C", "--city", action = "store", help = "Only select server
 parser.add_argument("-Cn", "--city-not", action = "store", help = "Exclude servers located in the cities specified", nargs = "+", metavar = "city_code")
 parser.add_argument("-p", "--provider", action = "store", help = "Only select servers using the specified providers", nargs = "+", metavar = "provider")
 parser.add_argument("-pn", "--provider-not", action = "store", help = "Exclude servers using the specified providers", nargs = "+", metavar = "provider")
+parser.add_argument("-f", "--format", action = "store", help = "Specify the relay attributes to print in the results", nargs = "+", metavar = "identifier")
+parser.add_argument("-v", "--verbose", action = "store_true", help = "Show more relay attributes in the results")
 parser.add_argument("-w", "--wireguard", action = "store_true", help = "Only select WireGuard servers")
 parser.add_argument("-o", "--openvpn", action = "store_true", help = "Only select OpenVPN servers")
 parser.add_argument("-s", "--stboot", action = "store_true", help = "Only select stboot servers")
@@ -264,6 +292,13 @@ parser.add_argument("-6", "--ipv6", action = "store_true", help = "Use IPv6 to p
 parser.add_argument("-u", "--use", action = "store_true", help = "Change Mullvad relay options to use the lowest latency server tested")
 
 args = parser.parse_args()
+
+pingRequested = True
+if args.format:
+    attributes = getAttributes(args.format)
+    pingRequested = RTT in attributes
+else:
+    attributes = attributesLong if args.verbose else attributesShort
 
 if args.country != None:
 	countryConditions = list(map(eqAttr(COUNTRY_CODE), args.country))
@@ -332,21 +367,25 @@ relays = list(filter(filterAnd(relayConditions), getRelays()))
 if relays == []:
     failure("The conditions specified resulted in no relays")
 
-itemsSpaces = getSpacing(relays, shortResults)
+itemsSpaces = getSpacing(relays, attributes)
 
 IP = IPV6 if args.ipv6 else IPV4
 
-printBox(getSpacingList(shortResults, itemsSpaces), "┌", "┐", "┬", "─")
+printBox(getSpacingList(attributes, itemsSpaces), "┌", "┐", "┬", "─")
 for index, r in enumerate(relays):
     host = r[HOSTNAME]
     address = r[IP]
 
-    _, rtt, _ = ping(address, 1, timeout = timeout, ipv6 = args.ipv6)
-    relays[index][RTT] = rtt
+    if pingRequested:
+        _, rtt, _ = ping(address, 1, timeout = timeout, ipv6 = args.ipv6)
+        relays[index][RTT] = rtt
 
-    printResult(r, shortResults, itemsSpaces, "│")
+    printResult(r, attributes, itemsSpaces, "│")
 
-printBox(getSpacingList(shortResults, itemsSpaces), "└", "┘", "┴", "─")
+printBox(getSpacingList(attributes, itemsSpaces), "└", "┘", "┴", "─")
+
+if not pingRequested:
+    sys.exit(0)
 
 # Filter out relays whose latency test resulted resulted in an error
 relays = list(filter(lambda r: r[RTT] != None, relays))
