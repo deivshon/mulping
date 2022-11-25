@@ -188,7 +188,7 @@ ITEMS_FORMAT = {
     BANDWIDTH: lambda b: f"{b} Gbps",
     COUNTRY_NAME: noFormat,
     CITY_NAME: noFormat,
-    STBOOT: lambda s: "RAM" if s else "DISK",
+    STBOOT: lambda s: "RAM" if s else "Disk",
     TYPE: lambda t: relayTypeFormat[t] if t in relayTypeFormat else "Unknown"
 }
 
