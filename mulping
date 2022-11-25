@@ -5,6 +5,7 @@ import sys
 import json
 import argparse
 import subprocess
+from random import randint
 
 from time import time
 
@@ -290,6 +291,7 @@ parser.add_argument("-b", "--bandwidth", action = "store", help = "Only select s
 parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to wait for each ping response", metavar = "timeout")
 parser.add_argument("-6", "--ipv6", action = "store_true", help = "Use IPv6 to ping servers (requires IPv6 connectivity on both ends)")
 parser.add_argument("-u", "--use", action = "store_true", help = "Change Mullvad relay options to use the lowest latency server tested")
+parser.add_argument("-r", "--random", action = "store_true", help = "Don't test latency and just change Mullvad relay options to use a random server within the ones available based on the other arguments")
 
 args = parser.parse_args()
 
@@ -299,6 +301,11 @@ if args.format:
     pingRequested = RTT in attributes
 else:
     attributes = attributesLong if args.verbose else attributesShort
+
+if args.random:
+    if RTT in attributes: attributes.remove(RTT)
+
+    pingRequested = False
 
 if args.country != None:
 	countryConditions = list(map(eqAttr(COUNTRY_CODE), args.country))
@@ -384,6 +391,10 @@ for index, r in enumerate(relays):
 
 printBox(getSpacingList(attributes, itemsSpaces), "└", "┘", "┴", "─")
 
+if args.random:
+    print()
+    mullvadChangeRelay(relays[randint(0, len(relays) - 1)][HOSTNAME])
+
 if not pingRequested:
     sys.exit(0)
 
@@ -401,4 +412,4 @@ print(f"Lowest latency host: {lowestLatency[HOSTNAME]} ({lowestLatency[RTT]}ms)"
 
 if args.use:
     print()
-    mullvadChangeRelay(lowestLatency[0])
+    mullvadChangeRelay(lowestLatency[HOSTNAME])
