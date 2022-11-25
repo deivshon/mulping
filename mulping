@@ -56,11 +56,8 @@ filterAnd = lambda filters: (lambda r: [f(r) for f in filters].count(False) == 0
 ##################
 
 
-def perror(err):
-    print(err, file = sys.stderr)
-
 def failure(err):
-    perror(err)
+    print(err, file = sys.stderr)
     sys.exit(1)
 
 
