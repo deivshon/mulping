@@ -17,7 +17,9 @@ HOSTNAME = "hostname"
 TYPE = "type"
 ACTIVE = "active"
 COUNTRY_CODE = "country_code"
+COUNTRY_NAME = "country_name"
 CITY_CODE = "city_code"
+CITY_NAME = "city_name"
 IPV4 = "ipv4_addr_in"
 IPV6 = "ipv6_addr_in"
 PROVIDER = "provider"
@@ -173,10 +175,22 @@ ITEMS_SPACES = {
     COUNTRY_CODE: 2,
     CITY_CODE: 3,
     PROVIDER: 12,
-    RTT: 10
+    RTT: 10,
+    OWNED: 6,
+    BANDWIDTH: 7,
+    COUNTRY_NAME: 20,
+    CITY_NAME: 20,
+    STBOOT: 4,
+    TYPE: 9
 }
 
 noFormat = lambda i: i
+
+relayTypeFormat = {
+    WIREGUARD: "WireGuard",
+    OPENVPN: "OpenVPN",
+    BRIDGE: "Bridge"
+}
 
 ITEMS_FORMAT = {
     HOSTNAME: noFormat,
@@ -185,7 +199,13 @@ ITEMS_FORMAT = {
     COUNTRY_CODE: noFormat,
     CITY_CODE: noFormat,
     PROVIDER: noFormat,
-    RTT: lambda rtt: f"{rtt:.3f}ms"
+    RTT: lambda rtt: f"{rtt:.3f}ms",
+    OWNED: lambda o: "Owned" if o else "Rented",
+    BANDWIDTH: lambda b: f"{b} Gbps",
+    COUNTRY_NAME: noFormat,
+    CITY_NAME: noFormat,
+    STBOOT: lambda s: "RAM" if s else "DISK",
+    TYPE: lambda t: relayTypeFormat[t] if t in relayTypeFormat else "Unknown"
 }
 
 getSpaces = lambda i: [ITEMS_SPACES[item] if item in ITEMS_SPACES else None for item in i]
