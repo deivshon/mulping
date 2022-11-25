@@ -168,26 +168,18 @@ def mullvadChangeRelay(hostname):
 # Printing utilities #
 ######################
 
-SPACES_HOSTNAME = 15
-SPACES_IPV4 = 16
-SPACES_COUNTRY_CODE = 2
-SPACES_CITY_CODE = 3
-SPACES_PROVIDER = 10
-SPACES_RTT = 10
 
-ITEMS_SHORT_SPACES = [
-    SPACES_HOSTNAME,
-    SPACES_RTT
-]
+ITEMS_SPACES = {
+    HOSTNAME: 15,
+    IPV4: 16,
+    IPV6: 32,
+    COUNTRY_CODE: 2,
+    CITY_CODE: 3,
+    PROVIDER: 12,
+    RTT: 10
+}
 
-ITEMS_LONG_SPACES = [
-    SPACES_HOSTNAME,
-    SPACES_RTT,
-    SPACES_COUNTRY_CODE,
-    SPACES_CITY_CODE,
-    SPACES_PROVIDER,
-    SPACES_IPV4
-]
+getSpaces = lambda i: [ITEMS_SPACES[item] if item in ITEMS_SPACES else None for item in i]
 
 shortResults = [HOSTNAME, RTT]
 longResults = [HOSTNAME, RTT, COUNTRY_CODE, CITY_CODE, PROVIDER, IPV4]
@@ -202,16 +194,19 @@ def printBox(items, start, end, middle, regular):
         box += regular * (i + 2) + middle
 
     box = box[0:len(box) - 1] + end
-    
+
     print(box)
 
-def printResult(relay, attributes, spaces, wall):
-    if len(attributes) != len(spaces):
-        failure("Malformed data received by printing function")
-
+def printResult(relay, attributes, wall):
     print(f"{wall} ", end = "")
-    for attribute, spacing in zip(attributes, spaces):
-        print(f"{relay[attribute]:{spacing}} {wall} ", end = "")
+    for attribute in attributes:
+        if not attribute in ITEMS_SPACES:
+            failure("Unknown attribute received by printing function")
+
+        if relay[attribute] == None:
+            print(f"{'error':{ITEMS_SPACES[attribute]}} {wall} ", end = "")
+        else:
+            print(f"{relay[attribute]:{ITEMS_SPACES[attribute]}} {wall} ", end = "")
 
     print()
 
@@ -315,7 +310,7 @@ if relays == []:
     failure("The conditions specified resulted in no relays")
 
 latencies = []
-printBox(ITEMS_SHORT_SPACES, "┌", "┐", "┬", "─")
+printBox(getSpaces(shortResults), "┌", "┐", "┬", "─")
 for index, r in enumerate(relays):
     host = r[HOSTNAME]
     address = r[IPV4]
@@ -331,10 +326,10 @@ for index, r in enumerate(relays):
 
     relays[index][RTT] = rtt
 
-    printResult(r, shortResults, ITEMS_SHORT_SPACES, "│")
+    printResult(r, shortResults, "│")
 
     if rtt != None: latencies.append((host, rtt))
-printBox(ITEMS_SHORT_SPACES, "└", "┘", "┴", "─")
+printBox(getSpaces(shortResults), "└", "┘", "┴", "─")
 
 if latencies == []:
     failure("\nNo relay could be reached")
@@ -342,8 +337,8 @@ if latencies == []:
 lowestLatency = min(latencies, key = lambda e: e[1])
 maxLatency = max(latencies, key = lambda e: e[1])
 
-print(f"\nHighest latency host: {maxLatency[0]} ({maxLatency[1]}ms)")
-print(f"Lowest latency host: {lowestLatency[0]} ({lowestLatency[1]}ms)")
+print(f"\nHighest latency host: {maxLatency[0]} ({maxLatency[1]})")
+print(f"Lowest latency host: {lowestLatency[0]} ({lowestLatency[1]})")
 
 if args.use:
     print()
