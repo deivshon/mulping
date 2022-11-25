@@ -292,20 +292,24 @@ parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to
 parser.add_argument("-6", "--ipv6", action = "store_true", help = "Use IPv6 to ping servers (requires IPv6 connectivity on both ends)")
 parser.add_argument("-u", "--use", action = "store_true", help = "Change Mullvad relay options to use the lowest latency server tested")
 parser.add_argument("-r", "--random", action = "store_true", help = "Don't test latency and just change Mullvad relay options to use a random server within the ones available based on the other arguments")
+parser.add_argument("-q", "--quiet", action = "store_true", help = "Don't show relay results box")
 
 args = parser.parse_args()
 
-pingRequested = True
 if args.format:
     attributes = getAttributes(args.format)
-    pingRequested = RTT in attributes
 else:
     attributes = attributesLong if args.verbose else attributesShort
 
+pingRequested = RTT in attributes
+
 if args.random:
-    if RTT in attributes: attributes.remove(RTT)
+    while RTT in attributes: attributes.remove(RTT)
 
     pingRequested = False
+
+if args.use and not pingRequested and not args.random:
+    failure("Use a format that contains latency to use the '-u' option")
 
 if args.country != None:
 	countryConditions = list(map(eqAttr(COUNTRY_CODE), args.country))
@@ -378,7 +382,9 @@ itemsSpaces = getSpacing(relays, attributes)
 
 IP = IPV6 if args.ipv6 else IPV4
 
-printBox(getSpacingList(attributes, itemsSpaces), "┌", "┐", "┬", "─")
+if not args.quiet:
+    printBox(getSpacingList(attributes, itemsSpaces), "┌", "┐", "┬", "─")
+
 for index, r in enumerate(relays):
     host = r[HOSTNAME]
     address = r[IP]
@@ -387,12 +393,14 @@ for index, r in enumerate(relays):
         _, rtt, _ = ping(address, 1, timeout = timeout, ipv6 = args.ipv6)
         relays[index][RTT] = rtt
 
-    printResult(r, attributes, itemsSpaces, "│")
+    if not args.quiet:
+        printResult(r, attributes, itemsSpaces, "│")
 
-printBox(getSpacingList(attributes, itemsSpaces), "└", "┘", "┴", "─")
+if not args.quiet:
+    printBox(getSpacingList(attributes, itemsSpaces), "└", "┘", "┴", "─")
+    print()
 
 if args.random:
-    print()
     mullvadChangeRelay(relays[randint(0, len(relays) - 1)][HOSTNAME])
 
 if not pingRequested:
@@ -402,12 +410,12 @@ if not pingRequested:
 relays = list(filter(lambda r: r[RTT] != None, relays))
 
 if relays == []:
-    failure("\nNo relay could be reached")
+    failure("No relay could be reached")
 
 lowestLatency = min(relays, key = lambda r: r[RTT])
 maxLatency = max(relays, key = lambda r: r[RTT])
 
-print(f"\nHighest latency host: {maxLatency[HOSTNAME]} ({maxLatency[RTT]}ms)")
+print(f"Highest latency host: {maxLatency[HOSTNAME]} ({maxLatency[RTT]}ms)")
 print(f"Lowest latency host: {lowestLatency[HOSTNAME]} ({lowestLatency[RTT]}ms)")
 
 if args.use:
