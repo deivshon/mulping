@@ -5,9 +5,14 @@ import sys
 import json
 import argparse
 import subprocess
-from random import randint
 
 from time import time
+from random import randint
+
+
+def failure(err):
+    print(err, file = sys.stderr)
+    sys.exit(1)
 
 RELAYS_LINK = "https://api.mullvad.net/www/relays/all/"
 RELAYS_FILE = "/tmp/mulpingData"
@@ -53,15 +58,14 @@ filterOr = lambda filters: (lambda r: [f(r) for f in filters].count(True) > 0)
 # Returns a function that given a relay 'r', tests if it fits all of the conditions in 'filters'
 filterAnd = lambda filters: (lambda r: [f(r) for f in filters].count(False) == 0)
 
+# Generates an aggregate filter with the 'aggregator' function using
+# the conditions generated using 'getSubFilter' from the values in 'source' 
+# and adds it to 'filters'
+def getFilter(source, getSubFilter, aggregator, filters):
+    conditions = list(map(getSubFilter, source))
+    newFilter = aggregator(conditions)
 
-##################
-# Error handling #
-##################
-
-
-def failure(err):
-    print(err, file = sys.stderr)
-    sys.exit(1)
+    filters.append(newFilter)
 
 
 #########################
@@ -259,18 +263,6 @@ def printLine(relay, attributes, itemsSpaces, wall):
             print(f" {ITEMS_FORMAT[attribute](relay[attribute]):{itemsSpaces[attribute]}} {wall}", end = "")
 
     print()
-
-
-################################
-# Arguments handling utilities #
-################################
-
-
-def getFilter(source, getSubFilter, aggregator, filters):
-    conditions = list(map(getSubFilter, source))
-    newFilter = aggregator(conditions)
-
-    filters.append(newFilter)
 
 
 ########
