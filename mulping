@@ -301,6 +301,7 @@ parser.add_argument("-u", "--use", action = "store_true", help = "Change Mullvad
 parser.add_argument("-r", "--random", action = "store_true", help = "Change Mullvad relay options to use a random server within the ones available based on the other arguments")
 parser.add_argument("-q", "--quiet", action = "store_true", help = "Don't show relay results box")
 parser.add_argument("-d", "--descending", action = "store_true", help = "Ping quietly and show results in order of descending latency")
+parser.add_argument("-np", "--no-ping", action = "store_true", help = "Don't ping, just show the relays within the ones available based on the other arguments")
 
 args = parser.parse_args()
 
@@ -316,6 +317,11 @@ else:
     attributes = attributesLong if args.verbose else attributesShort
 
 pingRequested = RTT in attributes
+
+if args.no_ping:
+    while RTT in attributes: attributes.remove(RTT)
+
+    pingRequested = False
 
 if args.use and not pingRequested:
     failure("Use a format that contains latency to use the '-u/--use' option")
