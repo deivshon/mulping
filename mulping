@@ -280,6 +280,8 @@ parser.add_argument("-c", "--country", action = "store", help = "Only select ser
 parser.add_argument("-cn", "--country-not", action = "store", help = "Exclude servers located in the countries specified", nargs = "+", metavar = "country_code")
 parser.add_argument("-C", "--city", action = "store", help = "Only select servers located in the cities specified", nargs = "+", metavar = "city_code")
 parser.add_argument("-Cn", "--city-not", action = "store", help = "Exclude servers located in the cities specified", nargs = "+", metavar = "city_code")
+parser.add_argument("-H", "--hostname", action = "store", help = "Only select the specified servers", nargs = "+", metavar = "hostname")
+parser.add_argument("-Hn", "--hostname-not", action = "store", help = "Exclude the specified servers", nargs = "+", metavar = "hostname")
 parser.add_argument("-p", "--provider", action = "store", help = "Only select servers using the specified providers", nargs = "+", metavar = "provider")
 parser.add_argument("-pn", "--provider-not", action = "store", help = "Exclude servers using the specified providers", nargs = "+", metavar = "provider")
 parser.add_argument("-f", "--format", action = "store", help = "Specify the relay attributes to print in the results", nargs = "+", metavar = "identifier")
@@ -347,6 +349,18 @@ if args.city_not != None:
 
     notCityFilter = filterAnd(notCityConditions)
     relayConditions.append(notCityFilter)
+
+if args.hostname != None:
+    hostnameConditions = list(map(eqAttr(HOSTNAME), args.hostname))
+    
+    hostnameFilter = filterOr(hostnameConditions)
+    relayConditions.append(hostnameFilter)
+
+if args.hostname_not != None:
+    notHostnameConditions = list(map(neqAttr(HOSTNAME), args.hostname_not))
+    
+    notHostnameFilter = filterAnd(notHostnameConditions)
+    relayConditions.append(notHostnameFilter)
 
 if args.provider != None:
 	providerConditions = list(map(eqAttr(PROVIDER), args.provider))
