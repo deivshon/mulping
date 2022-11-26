@@ -261,6 +261,18 @@ def printLine(relay, attributes, itemsSpaces, wall):
     print()
 
 
+################################
+# Arguments handling utilities #
+################################
+
+
+def getFilter(source, getSubFilter, aggregator, filters):
+    conditions = list(map(getSubFilter, source))
+    newFilter = aggregator(conditions)
+
+    filters.append(newFilter)
+
+
 ########
 # Main #
 ########
@@ -314,30 +326,16 @@ if args.random:
 if args.use and not pingRequested and not args.random:
     failure("Use a format that contains latency to use the '-u' option")
 
-if args.country != None:
-	countryConditions = list(map(eqAttr(COUNTRY_CODE), args.country))
-
-	countryFilter = filterOr(countryConditions)	
-	relayConditions.append(countryFilter)
-
-if args.country_not != None:
-	notCountryConditions = list(map(neqAttr(COUNTRY_CODE), args.country_not))
-
-	notCountryFilter = filterAnd(notCountryConditions)	
-	relayConditions.append(notCountryFilter)
+if args.country != None: getFilter(args.country, eqAttr(COUNTRY_CODE), filterOr, relayConditions)
+if args.country_not != None: getFilter(args.country_not, neqAttr(COUNTRY_CODE), filterAnd, relayConditions)
 
 if args.city != None:
     cities = list(zip(args.city[::2], args.city[1::2]))
     
-    # Returns a function that tests if relay 'r' is in the city defined by the tuple 'cityTuple'
-    # cityTuple[0] -> country code
-    # cityTuple[1] -> city code
+    # Returns a function that tests if relay 'r' is in the city defined by the (country_code, city_code) tuple 'cityTuple'
     inCity = lambda cityTuple: (lambda r: eqAttr(COUNTRY_CODE)(cityTuple[0])(r) and eqAttr(CITY_CODE)(cityTuple[1])(r))
 
-    cityConditions = list(map(inCity, cities))
-
-    cityFilter = filterOr(cityConditions)
-    relayConditions.append(cityFilter)
+    getFilter(cities, inCity, filterOr, relayConditions)
 
 if args.city_not != None:
     notCities = list(zip(args.city_not[::2], args.city_not[1::2]))
@@ -345,34 +343,13 @@ if args.city_not != None:
     # Symmetrical to inCity
     notInCity = lambda cityTuple: (lambda r: not (eqAttr(COUNTRY_CODE)(cityTuple[0])(r) and eqAttr(CITY_CODE)(cityTuple[1])(r)))
 
-    notCityConditions = list(map(notInCity, notCities))
+    getFilter(notCities, notInCity, filterAnd, relayConditions)
 
-    notCityFilter = filterAnd(notCityConditions)
-    relayConditions.append(notCityFilter)
+if args.hostname != None: getFilter(args.hostname, eqAttr(HOSTNAME), filterOr, relayConditions)
+if args.hostname_not != None: getFilter(args.hostname_not, neqAttr(HOSTNAME), filterAnd, relayConditions)
 
-if args.hostname != None:
-    hostnameConditions = list(map(eqAttr(HOSTNAME), args.hostname))
-    
-    hostnameFilter = filterOr(hostnameConditions)
-    relayConditions.append(hostnameFilter)
-
-if args.hostname_not != None:
-    notHostnameConditions = list(map(neqAttr(HOSTNAME), args.hostname_not))
-    
-    notHostnameFilter = filterAnd(notHostnameConditions)
-    relayConditions.append(notHostnameFilter)
-
-if args.provider != None:
-	providerConditions = list(map(eqAttr(PROVIDER), args.provider))
-
-	providerFilter = filterOr(providerConditions)	
-	relayConditions.append(providerFilter)
-
-if args.provider_not != None:
-	notProviderConditions = list(map(neqAttr(PROVIDER), args.provider_not))
-
-	notProviderFilter = filterAnd(notProviderConditions)	
-	relayConditions.append(notProviderFilter)
+if args.provider != None: getFilter(args.provider, eqAttr(PROVIDER), filterOr, relayConditions)
+if args.provider_not != None: getFilter(args.provider_not, neqAttr(PROVIDER), filterAnd, relayConditions)
 
 if args.bandwidth:
   try:
