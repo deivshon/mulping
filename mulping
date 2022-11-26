@@ -300,7 +300,7 @@ parser.add_argument("-6", "--ipv6", action = "store_true", help = "Use IPv6 to p
 parser.add_argument("-u", "--use", action = "store_true", help = "Change Mullvad relay options to use the lowest latency server tested")
 parser.add_argument("-r", "--random", action = "store_true", help = "Change Mullvad relay options to use a random server within the ones available based on the other arguments")
 parser.add_argument("-q", "--quiet", action = "store_true", help = "Don't show relay results box")
-parser.add_argument("-d", "--descending", action = "store_true", help = "Ping quietly and show results in order of descending latency")
+parser.add_argument("-d", "--descending", action = "store_true", help = "Show results in order of descending latency")
 parser.add_argument("-np", "--no-ping", action = "store_true", help = "Don't ping, just show the relays within the ones available based on the other arguments")
 
 args = parser.parse_args()
@@ -324,7 +324,7 @@ if args.no_ping:
     pingRequested = False
 
 if args.use and not pingRequested:
-    failure("Use a format that contains latency to use the '-u/--use' option")
+    failure("Use a format that contains latency to use the '-u'/'--use' option")
 
 if args.country != None: getFilter(args.country, eqAttr(COUNTRY_CODE), filterOr, relayConditions)
 if args.country_not != None: getFilter(args.country_not, neqAttr(COUNTRY_CODE), filterAnd, relayConditions)
@@ -365,6 +365,9 @@ if args.ipv6: relayConditions.append(lambda r: IPV6 in r)
 
 timeout = 10 if args.timeout == None else float(args.timeout) / 1000
 IP = IPV6 if args.ipv6 else IPV4
+
+# If the '-q'/'--quiet' or the '-d'/'--descending' option was enabled
+# don't print anything live
 boxLivePrint = noPrint if args.quiet or args.descending else printBox
 lineLivePrint = noPrint if args.quiet or args.descending else printLine
 
@@ -404,6 +407,9 @@ nonReachableRelays = list(filter(eqAttr(RTT)(None), relays))
 reachableRelays = list(filter(neqAttr(RTT)(None), relays))
 
 if args.descending:
+    # If the '-d'/'--descending' option was enabled, print
+    # the results here after having sorted them based on latency
+    # results
     descendingRelays = nonReachableRelays + list(sorted(reachableRelays, key = lambda r: r[RTT], reverse = True))
 
     if descendingRelays != []:
@@ -429,7 +435,12 @@ if args.use:
     sys.exit(0)
 if args.random:
     print("\nSelecting random server")
-    
+
+    # Choose relay pool based on whether latency testing was performed or not
+    # This allows to not try to connect to a server that could not be reached
+    # in case it was performed
+    #
+    # If it was not, choose the whole list of filtered relays as the pool
     randomRelayPool = relays if not pingRequested else reachableRelays
     mullvadChangeRelay(randomRelayPool[randint(0, len(randomRelayPool) - 1)][HOSTNAME])
     sys.exit(0)
