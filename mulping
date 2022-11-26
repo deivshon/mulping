@@ -170,6 +170,7 @@ def mullvadChangeRelay(hostname):
 
 
 noFormat = lambda i: i
+noPrint = lambda *_: None
 
 relayTypeFormat = {
     WIREGUARD: "WireGuard",
@@ -372,6 +373,9 @@ if args.owned: relayConditions.append(eqAttr(OWNED)(True))
 if args.ipv6: relayConditions.append(lambda r: IPV6 in r)
 
 timeout = 10 if args.timeout == None else float(args.timeout) / 1000
+IP = IPV6 if args.ipv6 else IPV4
+boxPrint = noPrint if args.quiet else printBox
+linePrint = noPrint if args.quiet else printResult
 
 relays = list(filter(filterAnd(relayConditions), getRelays()))
 
@@ -380,11 +384,8 @@ if relays == []:
 
 itemsSpaces = getSpacing(relays, attributes)
 
-IP = IPV6 if args.ipv6 else IPV4
 
-if not args.quiet:
-    printBox(getSpacingList(attributes, itemsSpaces), "┌", "┐", "┬", "─")
-
+boxPrint(getSpacingList(attributes, itemsSpaces), "┌", "┐", "┬", "─")
 for index, r in enumerate(relays):
     host = r[HOSTNAME]
     address = r[IP]
@@ -393,12 +394,9 @@ for index, r in enumerate(relays):
         _, rtt, _ = ping(address, 1, timeout = timeout, ipv6 = args.ipv6)
         relays[index][RTT] = rtt
 
-    if not args.quiet:
-        printResult(r, attributes, itemsSpaces, "│")
-
-if not args.quiet:
-    printBox(getSpacingList(attributes, itemsSpaces), "└", "┘", "┴", "─")
-    print()
+    linePrint(r, attributes, itemsSpaces, "│")
+boxPrint(getSpacingList(attributes, itemsSpaces), "└", "┘", "┴", "─")
+if not args.quiet: print()
 
 if args.random:
     mullvadChangeRelay(relays[randint(0, len(relays) - 1)][HOSTNAME])
