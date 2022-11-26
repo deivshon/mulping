@@ -247,7 +247,7 @@ def printBox(items, start, end, middle, regular):
 
     print(box)
 
-def printResult(relay, attributes, itemsSpaces, wall):
+def printLine(relay, attributes, itemsSpaces, wall):
     print(f"{wall}", end = "")
     for attribute in attributes:
         if not attribute in itemsSpaces or attribute not in ITEMS_FORMAT:
@@ -375,7 +375,7 @@ if args.ipv6: relayConditions.append(lambda r: IPV6 in r)
 timeout = 10 if args.timeout == None else float(args.timeout) / 1000
 IP = IPV6 if args.ipv6 else IPV4
 boxPrint = noPrint if args.quiet else printBox
-linePrint = noPrint if args.quiet else printResult
+linePrint = noPrint if args.quiet else printLine
 
 relays = list(filter(filterAnd(relayConditions), getRelays()))
 
@@ -383,7 +383,6 @@ if relays == []:
     failure("The conditions specified resulted in no relays")
 
 itemsSpaces = getSpacing(relays, attributes)
-
 
 boxPrint(getSpacingList(attributes, itemsSpaces), "┌", "┐", "┬", "─")
 for index, r in enumerate(relays):
