@@ -298,10 +298,17 @@ parser.add_argument("-b", "--bandwidth", action = "store", help = "Only select s
 parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to wait for each ping response", metavar = "timeout")
 parser.add_argument("-6", "--ipv6", action = "store_true", help = "Use IPv6 to ping servers (requires IPv6 connectivity on both ends)")
 parser.add_argument("-u", "--use", action = "store_true", help = "Change Mullvad relay options to use the lowest latency server tested")
-parser.add_argument("-r", "--random", action = "store_true", help = "Don't test latency and just change Mullvad relay options to use a random server within the ones available based on the other arguments")
+parser.add_argument("-r", "--random", action = "store_true", help = "Change Mullvad relay options to use a random server within the ones available based on the other arguments")
 parser.add_argument("-q", "--quiet", action = "store_true", help = "Don't show relay results box")
+parser.add_argument("-d", "--descending", action = "store_true", help = "Ping quietly and show results in order of descending latency")
 
 args = parser.parse_args()
+
+
+######################
+# Arguments handling #
+######################
+
 
 if args.format:
     attributes = getAttributes(args.format)
@@ -310,20 +317,15 @@ else:
 
 pingRequested = RTT in attributes
 
-if args.random:
-    while RTT in attributes: attributes.remove(RTT)
-
-    pingRequested = False
-
-if args.use and not pingRequested and not args.random:
-    failure("Use a format that contains latency to use the '-u' option")
+if args.use and not pingRequested:
+    failure("Use a format that contains latency to use the '-u/--use' option")
 
 if args.country != None: getFilter(args.country, eqAttr(COUNTRY_CODE), filterOr, relayConditions)
 if args.country_not != None: getFilter(args.country_not, neqAttr(COUNTRY_CODE), filterAnd, relayConditions)
 
 if args.city != None:
     cities = list(zip(args.city[::2], args.city[1::2]))
-    
+
     # Returns a function that tests if relay 'r' is in the city defined by the (country_code, city_code) tuple 'cityTuple'
     inCity = lambda cityTuple: (lambda r: eqAttr(COUNTRY_CODE)(cityTuple[0])(r) and eqAttr(CITY_CODE)(cityTuple[1])(r))
 
@@ -357,8 +359,14 @@ if args.ipv6: relayConditions.append(lambda r: IPV6 in r)
 
 timeout = 10 if args.timeout == None else float(args.timeout) / 1000
 IP = IPV6 if args.ipv6 else IPV4
-boxPrint = noPrint if args.quiet else printBox
-linePrint = noPrint if args.quiet else printLine
+boxLivePrint = noPrint if args.quiet or args.descending else printBox
+lineLivePrint = noPrint if args.quiet or args.descending else printLine
+
+
+#############
+# Main loop #
+#############
+
 
 relays = list(filter(filterAnd(relayConditions), getRelays()))
 
@@ -367,7 +375,7 @@ if relays == []:
 
 itemsSpaces = getSpacing(relays, attributes)
 
-boxPrint(getSpacingList(attributes, itemsSpaces), "┌", "┐", "┬", "─")
+boxLivePrint(getSpacingList(attributes, itemsSpaces), "┌", "┐", "┬", "─")
 for index, r in enumerate(relays):
     host = r[HOSTNAME]
     address = r[IP]
@@ -376,28 +384,46 @@ for index, r in enumerate(relays):
         _, rtt, _ = ping(address, 1, timeout = timeout, ipv6 = args.ipv6)
         relays[index][RTT] = rtt
 
-    linePrint(r, attributes, itemsSpaces, "│")
-boxPrint(getSpacingList(attributes, itemsSpaces), "└", "┘", "┴", "─")
-if not args.quiet: print()
+    lineLivePrint(r, attributes, itemsSpaces, "│")
+boxLivePrint(getSpacingList(attributes, itemsSpaces), "└", "┘", "┴", "─")
+if not args.quiet and not args.descending: print()
 
-if args.random:
-    mullvadChangeRelay(relays[randint(0, len(relays) - 1)][HOSTNAME])
 
-if not pingRequested:
-    sys.exit(0)
+####################
+# Final operations #
+####################
 
-# Filter out relays whose latency test resulted resulted in an error
-relays = list(filter(lambda r: r[RTT] != None, relays))
 
-if relays == []:
+nonReachableRelays = list(filter(eqAttr(RTT)(None), relays))
+reachableRelays = list(filter(neqAttr(RTT)(None), relays))
+
+if args.descending:
+    descendingRelays = nonReachableRelays + list(sorted(reachableRelays, key = lambda r: r[RTT], reverse = True))
+
+    if descendingRelays != []:
+        printBox(getSpacingList(attributes, itemsSpaces), "┌", "┐", "┬", "─")
+        for r in descendingRelays:
+            printLine(r, attributes, itemsSpaces, "│")
+        printBox(getSpacingList(attributes, itemsSpaces), "└", "┘", "┴", "─")
+        print()
+
+if reachableRelays == [] and pingRequested:
     failure("No relay could be reached")
 
-lowestLatency = min(relays, key = lambda r: r[RTT])
-maxLatency = max(relays, key = lambda r: r[RTT])
+if pingRequested:
+    lowestLatency = min(reachableRelays, key = lambda r: r[RTT])
+    maxLatency = max(reachableRelays, key = lambda r: r[RTT])
 
-print(f"Highest latency host: {maxLatency[HOSTNAME]} ({maxLatency[RTT]}ms)")
-print(f"Lowest latency host: {lowestLatency[HOSTNAME]} ({lowestLatency[RTT]}ms)")
+    print(f"Highest latency host: {maxLatency[HOSTNAME]} ({maxLatency[RTT]}ms)")
+    print(f"Lowest latency host: {lowestLatency[HOSTNAME]} ({lowestLatency[RTT]}ms)")
 
 if args.use:
-    print()
+    print("\nSelecting lowest latency server")
     mullvadChangeRelay(lowestLatency[HOSTNAME])
+    sys.exit(0)
+if args.random:
+    print("\nSelecting random server")
+    
+    randomRelayPool = relays if not pingRequested else reachableRelays
+    mullvadChangeRelay(randomRelayPool[randint(0, len(randomRelayPool) - 1)][HOSTNAME])
+    sys.exit(0)
