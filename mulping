@@ -288,20 +288,23 @@ parser.add_argument("-H", "--hostname", action = "store", help = "Only select th
 parser.add_argument("-Hn", "--hostname-not", action = "store", help = "Exclude the specified servers", nargs = "+", metavar = "hostname")
 parser.add_argument("-p", "--provider", action = "store", help = "Only select servers using the specified providers", nargs = "+", metavar = "provider")
 parser.add_argument("-pn", "--provider-not", action = "store", help = "Exclude servers using the specified providers", nargs = "+", metavar = "provider")
-parser.add_argument("-f", "--format", action = "store", help = "Specify the relay attributes to print in the results", nargs = "+", metavar = "identifier")
-parser.add_argument("-v", "--verbose", action = "store_true", help = "Show more relay attributes in the results")
 parser.add_argument("-w", "--wireguard", action = "store_true", help = "Only select WireGuard servers")
 parser.add_argument("-o", "--openvpn", action = "store_true", help = "Only select OpenVPN servers")
 parser.add_argument("-s", "--stboot", action = "store_true", help = "Only select stboot servers")
 parser.add_argument("-O", "--owned", action = "store_true", help = "Only select servers owned by Mullvad")
 parser.add_argument("-b", "--bandwidth", action = "store", help = "Only select servers that have at least this bandwidth speed (Gbps)", metavar = "bandwidth")
-parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to wait for each ping response", metavar = "timeout")
-parser.add_argument("-6", "--ipv6", action = "store_true", help = "Use IPv6 to ping servers (requires IPv6 connectivity on both ends)")
-parser.add_argument("-u", "--use", action = "store_true", help = "Change Mullvad relay options to use the lowest latency server tested")
-parser.add_argument("-r", "--random", action = "store_true", help = "Change Mullvad relay options to use a random server within the ones available based on the other arguments")
+
+parser.add_argument("-v", "--verbose", action = "store_true", help = "Show more relay attributes in the results")
+parser.add_argument("-f", "--format", action = "store", help = "Specify the relay attributes to print in the results", nargs = "+", metavar = "identifier")
 parser.add_argument("-q", "--quiet", action = "store_true", help = "Don't show relay results box")
 parser.add_argument("-d", "--descending", action = "store_true", help = "Show results in order of descending latency")
+
 parser.add_argument("-np", "--no-ping", action = "store_true", help = "Don't ping, just show the relays within the ones available based on the other arguments")
+parser.add_argument("-t", "--timeout", action = "store", help = "Maximum time to wait for each ping response", metavar = "timeout")
+parser.add_argument("-6", "--ipv6", action = "store_true", help = "Use IPv6 to ping servers (requires IPv6 connectivity on both ends)")
+
+parser.add_argument("-u", "--use", action = "store_true", help = "Change Mullvad relay options to use the lowest latency server tested")
+parser.add_argument("-r", "--random", action = "store_true", help = "Change Mullvad relay options to use a random server within the ones available based on the other arguments")
 
 args = parser.parse_args()
 
