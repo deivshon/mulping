@@ -305,6 +305,9 @@ parser.add_argument("-np", "--no-ping", action = "store_true", help = "Don't pin
 
 args = parser.parse_args()
 
+formatPingError = lambda arg: f"Use a format that contains latency to use the {arg} option"
+flagPingError = lambda arg: f"The '-np/--no-ping' option can't be used with the {arg} option"
+
 
 ######################
 # Arguments handling #
@@ -318,13 +321,17 @@ else:
 
 pingRequested = RTT in attributes
 
+if not pingRequested:
+    if args.use: failure(formatPingError("'-u'/'--use'"))
+    if args.descending: failure(formatPingError("'-d'/'--descending'"))
+
 if args.no_ping:
+    if args.use: failure(flagPingError("'-u'/'--use'"))
+    if args.descending: failure(flagPingError("'-d'/'--descending'"))
+
     while RTT in attributes: attributes.remove(RTT)
 
     pingRequested = False
-
-if args.use and not pingRequested:
-    failure("Use a format that contains latency to use the '-u'/'--use' option")
 
 if args.country != None: getFilter(args.country, eqAttr(COUNTRY_CODE), filterOr, relayConditions)
 if args.country_not != None: getFilter(args.country_not, neqAttr(COUNTRY_CODE), filterAnd, relayConditions)
