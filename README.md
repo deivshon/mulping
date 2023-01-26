@@ -27,7 +27,7 @@ By default, the script will ping all Mullvad servers and return live results. Us
 | -b       | --bandwidth    | Gbps amount      | Only server that have at least the provided bandwidth will be selected                                                                                       | `-b 10`                           |
 | -w       | --wireguard    | /                | Only WireGuard servers will be selected                                                                                                                      | `-w`                              |
 | -o       | --openvpn      | /                | Only OpenVPN servers will be selected                                                                                                                        | `-o`                              |
-| -s       | --stboot       | /                | Only [stboot](https://mullvad.net/en/blog/2022/8/1/expanding-diskless-infrastructure-to-more-locations-system-transparency-stboot/) servers will be selected | `-s`                              |
+| -s       | --stboot       | /                | Only [stboot](https://mullvad.net/en/blog/2022/1/12/diskless-infrastructure-beta-system-transparency-stboot/) servers will be selected | `-s`                              |
 | -O       | --owned        | /                | Only servers directly owned by Mullvad will be selected                                                                                                      | `-O`                              |
 
 ### Output
