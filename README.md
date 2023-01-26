@@ -9,6 +9,8 @@ Self contained utility wrapper script for pinging and filtering Mullvad VPN serv
 
 ## Usage
 
+    $ python mulping.py {arguments}
+
 By default, the script will ping all Mullvad servers and return live results. Using arguments the servers that are pinged can be filtered, and how they are pinged and the output format can be changed
 
 ## Arguments
