@@ -128,12 +128,17 @@ def getRelays():
 
 
 def parsePing(pingOutput):
-    resultsLine = pingOutput.splitlines()[pingOutput.count("\n") - 1]
+    lines = pingOutput.splitlines()
+    while "" in lines: lines.remove("")
 
-    if not resultsLine.startswith("rtt"):
+    resultsLine = lines[len(lines) - 1]
+
+    try:
+        resultsLine = resultsLine[resultsLine.rfind("="):]
+    except:
         return None, None, None
 
-    rtts = [float(v) for v in resultsLine.split(" ")[3].split("/")]
+    rtts = [float(v) for v in resultsLine.split(" ")[1].split("/")]
 
     return rtts[0], rtts[1], rtts[2]
 
