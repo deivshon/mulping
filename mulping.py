@@ -9,13 +9,29 @@ import subprocess
 from time import time
 from random import randint
 
+WINDOWS = False
+UNIX = False
+
+if "linux" in sys.platform or "darwin" in sys.platform:
+  UNIX = True
+elif "win" in sys.platform:
+  WINDOWS = True
+else:
+  print("Unknown OS, assuming UNIX based")
+  UNIX = True
 
 def failure(err):
     print(err, file = sys.stderr)
     sys.exit(1)
 
 RELAYS_LINK = "https://api.mullvad.net/www/relays/all/"
-RELAYS_FILE = "/tmp/mulpingData"
+
+if UNIX:
+  RELAYS_FILE = "/tmp/mulpingData"
+  DEFAULT_TIMEOUT = 10
+else:
+  RELAYS_FILE = "C:\\Users\\" + os.getlogin() + "\\AppData\\Local\\Temp\\mulpingData"
+  DEFAULT_TIMEOUT = 10000
 
 TIMESTAMP_INDEX = 0
 
@@ -132,22 +148,28 @@ def parsePing(pingOutput):
     while "" in lines: lines.remove("")
 
     resultsLine = lines[len(lines) - 1]
-
-    try:
-        resultsLine = resultsLine[resultsLine.rfind("="):]
-    except:
-        return None, None, None
-
-    rtts = [float(v) for v in resultsLine.split(" ")[1].split("/")]
+    if UNIX:
+      try:
+          resultsLine = resultsLine[resultsLine.rfind("="):]
+          rtts = [float(v) for v in resultsLine.split(" ")[1].split("/")]
+      except:
+          return None, None, None
+    else:
+      resultsLine = list(map(lambda l: l[l.index("=") + 2:l.index("ms")], resultsLine.split(",")))
+      rtts = [float(v) for v in resultsLine]
 
     return rtts[0], rtts[1], rtts[2]
 
-def ping(addr, count, timeout = 10, ipv6 = False):
+def ping(addr, count, timeout = DEFAULT_TIMEOUT, ipv6 = False):
     try:
-        # e.g.: ping 0.0.0.0 -nqc1 -W10
-        pingCommand = ["ping", addr, "-nqc", str(count), "-W", str(timeout)]
-        if ipv6: pingCommand.append("-6")
+        if UNIX:
+          # e.g.: ping 0.0.0.0 -nqc 1 -W 10
+          pingCommand = ["ping", addr, "-nqc", str(count), "-W", str(timeout)]
+        else:
+          # e.g.: ping 0.0.0.0 -n 1 -w 10
+          pingCommand = ["ping", addr, "-n", str(count), "-w", str(timeout)]
 
+        if ipv6: pingCommand.append("-6")
         pingProcess = subprocess.run(pingCommand, capture_output = True)
     except:
         failure("The `ping` program could not be called")
@@ -378,7 +400,8 @@ if args.stboot: relayConditions.append(eqAttr(STBOOT)(True))
 if args.owned: relayConditions.append(eqAttr(OWNED)(True))
 if args.ipv6: relayConditions.append(lambda r: IPV6 in r)
 
-timeout = 10 if args.timeout == None else float(args.timeout) / 1000
+timeout = DEFAULT_TIMEOUT if args.timeout == None else (float(args.timeout) / 1000 if UNIX else float(args.timeout))
+
 IP = IPV6 if args.ipv6 else IPV4
 
 # If the '-q'/'--quiet' or the '-d'/'--descending' option was enabled
