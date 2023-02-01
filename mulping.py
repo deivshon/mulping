@@ -29,13 +29,12 @@ def failure(err):
 
 RELAYS_LINK = "https://api.mullvad.net/www/relays/all/"
 RELAYS_FILE_UNIX = "/tmp/mulpingData"
-RELAYS_FILE_WINDOWS = "C:\\Users\\" + os.getlogin() + "\\AppData\\Local\\Temp\\mulpingData"
 
 if ON_UNIX:
   RELAYS_FILE = RELAYS_FILE_UNIX
   DEFAULT_TIMEOUT = 10
 else:
-  RELAYS_FILE = RELAYS_FILE_WINDOWS
+  RELAYS_FILE = "C:\\Users\\" + os.getlogin() + "\\AppData\\Local\\Temp\\mulpingData"
   DEFAULT_TIMEOUT = 10000
 
 TIMESTAMP_INDEX = 0
