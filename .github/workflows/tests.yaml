@@ -20,5 +20,5 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run tests
         run: |
-          sudo apt-get install python-requests
+          sudo apt-get install python3-requests
           python3 -m unittest tests.py
