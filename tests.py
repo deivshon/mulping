@@ -1,6 +1,7 @@
 import unittest
+import os
 
-from mulping import parsePing
+from mulping import parsePing, getRelays, RELAYS_FILE_UNIX
 
 linuxPingOutput1 ="""PING 89.45.224.119 (89.45.224.119): 56 data bytes
 
@@ -29,3 +30,8 @@ class PingParseTest(unittest.TestCase):
         self.assertEqual(parsePing(linuxPingOutput1), expectedLinux1)
         self.assertEqual(parsePing(linuxPingOutput2), expectedLinux2)
         self.assertEqual(parsePing(linuxPingOutput3), expectedLinux3)
+
+class RelaysRetrievalTest(unittest.TestCase):
+    def testLoad(self):
+        getRelays()
+        self.assertTrue(os.path.isfile(RELAYS_FILE_UNIX), True)

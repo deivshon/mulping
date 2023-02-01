@@ -28,12 +28,14 @@ def failure(err):
     sys.exit(1)
 
 RELAYS_LINK = "https://api.mullvad.net/www/relays/all/"
+RELAYS_FILE_UNIX = "/tmp/mulpingData"
+RELAYS_FILE_WINDOWS = "C:\\Users\\" + os.getlogin() + "\\AppData\\Local\\Temp\\mulpingData"
 
 if ON_UNIX:
-  RELAYS_FILE = "/tmp/mulpingData"
+  RELAYS_FILE = RELAYS_FILE_UNIX
   DEFAULT_TIMEOUT = 10
 else:
-  RELAYS_FILE = "C:\\Users\\" + os.getlogin() + "\\AppData\\Local\\Temp\\mulpingData"
+  RELAYS_FILE = RELAYS_FILE_WINDOWS
   DEFAULT_TIMEOUT = 10000
 
 TIMESTAMP_INDEX = 0
