@@ -3,9 +3,8 @@
 Self contained utility wrapper script for pinging and filtering Mullvad VPN servers
 
 ## Requirements
-+ Linux
 + Python 3.7+
-+ [requests](https://requests.readthedocs.io) (if possible, one should install the relative distribution package, such as the [following](https://packages.debian.org/bullseye/python3-requests) in the case of Debian)
++ [requests](https://requests.readthedocs.io) (If you are using Windows, use [pip](https://pip.pypa.io/en/stable/). On Linux, if possible, one should install the relative distribution package, such as the [following](https://packages.debian.org/bullseye/python3-requests) in the case of Debian)
 
 ## Usage
 
