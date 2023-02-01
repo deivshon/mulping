@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from mulping import parsePing, getRelays, RELAYS_FILE_UNIX
+from mulping import parsePing, getRelays, RELAYS_FILE_UNIX, UNIX, WINDOWS
 
 linuxPingOutput1 ="""PING 89.45.224.119 (89.45.224.119): 56 data bytes
 
@@ -25,11 +25,27 @@ rtt min/avg/max/mdev = 100.131/111.721/163.633/20.372 ms
 """
 expectedLinux3 = (100.131, 111.721, 163.633)
 
+windowsPingOutput1 = """
+Pinging 89.45.224.119 with 32 bytes of data:
+Reply from 89.45.224.119: bytes=32 time=98ms TTL=52
+
+Ping statistics for 89.45.224.119:
+    Packets: Sent = 1, Received = 1, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 98ms, Maximum = 98ms, Average = 98ms
+
+"""
+
+expectedWindows1 = (98, 98, 98)
+
 class PingParseTest(unittest.TestCase):
     def testLinux(self):
-        self.assertEqual(parsePing(linuxPingOutput1), expectedLinux1)
-        self.assertEqual(parsePing(linuxPingOutput2), expectedLinux2)
-        self.assertEqual(parsePing(linuxPingOutput3), expectedLinux3)
+        self.assertEqual(parsePing(linuxPingOutput1, platform = UNIX), expectedLinux1)
+        self.assertEqual(parsePing(linuxPingOutput2, platform = UNIX), expectedLinux2)
+        self.assertEqual(parsePing(linuxPingOutput3, platform = UNIX), expectedLinux3)
+
+    def testWindows(self):
+        self.assertEqual(parsePing(windowsPingOutput1, platform = WINDOWS), expectedWindows1)
 
 class RelaysRetrievalTest(unittest.TestCase):
     def testLoad(self):
