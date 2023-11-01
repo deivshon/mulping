@@ -191,7 +191,7 @@ def ping(addr, count, timeout = DEFAULT_TIMEOUT, ipv6 = False):
 
 def mullvadChangeRelay(hostname):
     try:
-        mullvadProcess = subprocess.run(["mullvad", "relay", "set", "hostname", hostname])
+        mullvadProcess = subprocess.run(["mullvad", "relay", "set", "location", hostname])
 
         if mullvadProcess.returncode != 0:
             raise Exception
